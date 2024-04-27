@@ -1,7 +1,14 @@
 
 ## g4fi
 
-A simple command line client for g4f
+**g4f-interactive** - A simple command line client for [g4f](https://github.com/xtekky/gpt4free)
+
+## Installation
+
+```
+git clone https://github.com/sheepla/g4fi.git
+go install
+```
 
 ## Usage
 
