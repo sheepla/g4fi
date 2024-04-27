@@ -7,6 +7,7 @@
 
 ```
 git clone https://github.com/sheepla/g4fi.git
+cd g4fi
 go install
 ```
 
