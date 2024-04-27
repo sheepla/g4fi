@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 
 	urlbuilder "github.com/sheepla/go-urlbuilder"
 	"github.com/tidwall/gjson"
@@ -51,24 +52,24 @@ func (c *G4fClient) GetProviders() (*Providers, error) {
 	url, err := urlbuilder.MustParse(c.BaseURL()).
 		SetPath("/backend-api/v2/providers").String()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to build URL for providers")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create HTTP request for providers")
 	}
 
 	resp, err := c.internal.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to perform HTTP request for providers")
 	}
 
 	defer resp.Body.Close()
 
 	var providers Providers
 	if err := json.NewDecoder(resp.Body).Decode(&providers); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to decode JSON response for providers")
 	}
 
 	return &providers, nil
@@ -103,7 +104,7 @@ func (c *G4fClient) GetModels(provider string) (*Models, error) {
 	return &models, nil
 }
 
-type ChatContext struct {
+type Conversation struct {
 	//ID             string `json:"id"`
 	//ConversationID string `json:"conversation_id"`
 	//Jailbreak      string `json:"jailbreak"`
@@ -118,63 +119,41 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-func NewChatContext(provider string, modelName string) *ChatContext {
-	return &ChatContext{
-		Messages: []Message{},
-		Provider: provider,
-		Model:    modelName,
-	}
-}
-
-func (chat *ChatContext) AddUserMessage(message string) {
-	chat.Messages = append(chat.Messages, Message{
-		Role:    "user",
-		Content: message,
-	})
-}
-
-func (chat *ChatContext) AddAssistantMessage(message string) {
-	chat.Messages = append(chat.Messages, Message{
-		Role:    "assistant",
-		Content: message,
-	})
-}
-
 func (c *G4fClient) sendChatConversation(
-	chat *ChatContext,
+	conversation *Conversation,
 	handler func(r io.Reader) error,
 ) error {
 	url, err := urlbuilder.MustParse(c.BaseURL()).
 		SetPath("/backend-api/v2/conversation").String()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to build URL for conversation")
 	}
 
-	payload, err := json.Marshal(chat)
+	data, err := json.Marshal(conversation)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal chat context to JSON")
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create HTTP request for conversation")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.internal.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to perform HTTP request for conversation")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(resp.Status)
+		return errors.New("unexpected status: " + resp.Status)
 	}
 
 	defer resp.Body.Close()
 
 	if err := handler(resp.Body); err != nil {
-		return err
+		return errors.Wrap(err, "failed to handle response body")
 	}
 
 	return nil
@@ -195,20 +174,23 @@ func extractReplyMessageStream(src io.Reader, dest io.Writer) error {
 		if res.Get("type").String() == "content" {
 			fmt.Fprint(dest, res.Get("content").String())
 		}
+
+		// Insert line break at the end
+		fmt.Fprintln(dest, "")
 	}
 
 	return nil
 }
 
 func (c *G4fClient) SendAndStreamConversation(
-	chat *ChatContext,
+	chat *Conversation,
 	dest io.Writer,
 ) error {
 	err := c.sendChatConversation(chat, func(r io.Reader) error {
 		return extractReplyMessageStream(r, dest)
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to send chat conversation")
 	}
 
 	return nil

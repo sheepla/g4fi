@@ -1,23 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/sheepla/g4fi/api"
+	"github.com/sheepla/g4fi/ui"
 )
 
 func main() {
-	c := api.NewG4fClient(&http.Client{
+	client := api.NewG4fClient(&http.Client{
 		Timeout: 30 * time.Second,
-	}).WithHost("localhost:8080")
-
-	chat := api.NewChatContext("You", "")
-	chat.AddUserMessage(strings.Join(os.Args[1:], " "))
-
-	if err := c.SendAndStreamConversation(chat, os.Stdout); err != nil {
-		panic(err)
+	})
+	if err := ui.RunInteractiveMode(client); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] %s", err)
 	}
 }
