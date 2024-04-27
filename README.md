@@ -39,22 +39,9 @@ To exit the interactive session, simply type `Ctrl-D`.
 ```
 [you@your-computer]$ g4fi
 
-> How to use net/http in Go?
+> hi
 
-The `net/http` package in Go is used for HTTP client and server implementations. Here's a basic example of how to use `net/http` to create a simple HTTP server and client.
-
-**HTTP Server:**
-```go
-package main
-
-import (
-    "fmt"
-    "net/http"
-)
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w
-
+Hello! How can I assist you today?
 >
 ```
 
