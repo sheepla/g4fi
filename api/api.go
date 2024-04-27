@@ -48,6 +48,14 @@ func (c *G4fClient) UseSSL(u bool) *G4fClient {
 
 type Providers []string
 
+func (providers Providers) Index(idx int) string {
+	if len(providers) < idx {
+		return ""
+	} else {
+		return providers[idx]
+	}
+}
+
 func (c *G4fClient) GetProviders() (*Providers, error) {
 	url, err := urlbuilder.MustParse(c.BaseURL()).
 		SetPath("/backend-api/v2/providers").String()
@@ -76,6 +84,14 @@ func (c *G4fClient) GetProviders() (*Providers, error) {
 }
 
 type Models []string
+
+func (models Models) Index(idx int) string {
+	if len(models) < idx {
+		return ""
+	} else {
+		return models[idx]
+	}
+}
 
 func (c *G4fClient) GetModels(provider string) (*Models, error) {
 	url, err := urlbuilder.MustParse(c.BaseURL()).
@@ -163,6 +179,9 @@ func (c *G4fClient) sendChatConversation(
 // so this function extracts message tokens line by line from the io.Reader
 // and writes them to an destination io.Writer.
 func extractReplyMessageStream(src io.Reader, dest io.Writer) error {
+	// Insert line break at the end
+	fmt.Fprintln(dest, "")
+
 	sc := bufio.NewScanner(src)
 	for sc.Scan() {
 		if err := sc.Err(); err != nil {
@@ -175,9 +194,10 @@ func extractReplyMessageStream(src io.Reader, dest io.Writer) error {
 			fmt.Fprint(dest, res.Get("content").String())
 		}
 
-		// Insert line break at the end
-		fmt.Fprintln(dest, "")
 	}
+
+	// Insert line break at the end
+	fmt.Fprintln(dest, "")
 
 	return nil
 }

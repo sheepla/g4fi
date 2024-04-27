@@ -11,18 +11,9 @@ import (
 	"github.com/sheepla/g4fi/api"
 )
 
-type Command int
-
-const (
-	CommandHelp Command = iota
-	CommandSetAiAssistant
-	CommandQuit
-)
-
 const helpMessage = `
 Usage:
 	/help         Show help message
-	/set          Set target AI assistant provider
 	/quit, Ctrl-D Quit interactive session
 `
 
@@ -55,31 +46,44 @@ func (s *State) AddAiMessage(message string) {
 	})
 }
 
-func (s *State) ToPromptText() string {
-	provider := s.AiProvider
-	if provider == "" {
-		provider = "Auto"
-	}
+//func (s *State) ToPromptText() string {
+//	provider := s.AiProvider
+//	if provider == "" {
+//		provider = "Auto"
+//	}
+//
+//	model := s.AiModel
+//	if model == "" {
+//		model = "Default"
+//	}
+//
+//	return fmt.Sprintf("\n[ %s %s ]", provider, model)
+//}
 
-	model := s.AiModel
-	if model == "" {
-		model = "Default"
-	}
-
-	return fmt.Sprintf("\n[ Provider: %s | Model: %s ]", provider, model)
+func initCompleter() readline.AutoCompleter {
+	return readline.NewPrefixCompleter(
+		readline.PcItem("/help"),
+		readline.PcItem("/quit"),
+	)
 }
 
 func RunInteractiveMode(client *api.G4fClient) error {
 	state := initState()
 
-	rl, err := readline.New("> ")
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:          "> ",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "",
+		AutoComplete:    initCompleter(),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize readline module")
 	}
 	defer rl.Close()
 
+LOOP:
 	for {
-		fmt.Println(state.ToPromptText())
+		//fmt.Println(state.ToPromptText())
 
 		line, err := rl.Readline()
 		if err != nil {
@@ -90,15 +94,22 @@ func RunInteractiveMode(client *api.G4fClient) error {
 			return err
 		}
 
-		if strings.TrimSpace(line) == "" {
-			continue
+		switch strings.TrimSpace(line) {
+		case "/help":
+			fmt.Println(helpMessage)
+			continue LOOP
+		case "/quit":
+			return nil
+		case "":
+			continue LOOP
+		default:
+			if err := invokeAi(client, state); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+
+			state.AddUserMessage(line)
 		}
 
-		state.AddUserMessage(line)
-
-		if err := invokeAi(client, state); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
 	}
 }
 
