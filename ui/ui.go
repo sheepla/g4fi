@@ -103,11 +103,12 @@ LOOP:
 		case "":
 			continue LOOP
 		default:
+			state.AddUserMessage(line)
+
 			if err := invokeAi(client, state); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
 
-			state.AddUserMessage(line)
 		}
 
 	}
