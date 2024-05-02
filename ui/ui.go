@@ -23,11 +23,11 @@ type State struct {
 	Messages   []api.Message
 }
 
-func initState() *State {
+func initState(provider string, model string) *State {
 
 	return &State{
-		AiProvider: "",
-		AiModel:    "",
+		AiProvider: provider,
+		AiModel:    model,
 		Messages:   []api.Message{},
 	}
 }
@@ -46,19 +46,19 @@ func (s *State) AddAiMessage(message string) {
 	})
 }
 
-//func (s *State) ToPromptText() string {
-//	provider := s.AiProvider
-//	if provider == "" {
-//		provider = "Auto"
-//	}
-//
-//	model := s.AiModel
-//	if model == "" {
-//		model = "Default"
-//	}
-//
-//	return fmt.Sprintf("\n[ %s %s ]", provider, model)
-//}
+func (s *State) ToPromptText() string {
+	provider := s.AiProvider
+	if provider == "" {
+		provider = "Auto"
+	}
+
+	model := s.AiModel
+	if model == "" {
+		model = "Default"
+	}
+
+	return fmt.Sprintf("\n[ %s %s ]", provider, model)
+}
 
 func initCompleter() readline.AutoCompleter {
 	return readline.NewPrefixCompleter(
@@ -67,8 +67,8 @@ func initCompleter() readline.AutoCompleter {
 	)
 }
 
-func RunInteractiveMode(client *api.G4fClient) error {
-	state := initState()
+func RunInteractiveMode(client *api.G4fClient, provider string, model string) error {
+	state := initState(provider, model)
 
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:          "> ",
@@ -83,7 +83,7 @@ func RunInteractiveMode(client *api.G4fClient) error {
 
 LOOP:
 	for {
-		//fmt.Println(state.ToPromptText())
+		fmt.Println(state.ToPromptText())
 
 		line, err := rl.Readline()
 		if err != nil {
@@ -96,7 +96,7 @@ LOOP:
 
 		switch strings.TrimSpace(line) {
 		case "/help":
-			fmt.Println(helpMessage)
+			fmt.Print(helpMessage)
 			continue LOOP
 		case "/quit":
 			return nil
