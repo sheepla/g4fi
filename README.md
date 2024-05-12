@@ -1,5 +1,8 @@
+<div align="center">
 
-## g4fi
+# g4fi
+
+</div>
 
 **g4f-interactive** - A simple command line client for [g4f](https://github.com/xtekky/gpt4free)
 
@@ -13,10 +16,10 @@ go install
 
 ## Usage
 
-Using this tool requires the g4f server to be running and the ability to communicate with the server on the corresponding port number. If you are using Docker, you can start the container with the following:
+Using this tool requires the g4f server to be running and the ability to communicate with the server on the corresponding port number (default: 8080). If you are using Docker, you can start the container with the following:
 
 ```sh
-docker run -p 8080:8080 -p 1337:1337 -p 7900:7900 --shm-size="2g"  hlohaus789/g4f:latest
+docker run --rm -it -p 8080:8080 -p 1337:1337 -p 7900:7900 --shm-size="2g"  hlohaus789/g4f:latest
 ```
 
 Command line usage is below:
